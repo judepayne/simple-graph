@@ -1,0 +1,208 @@
+[
+  {
+    "direction": "down"
+  },
+  [
+    "LEI00012047z12048",
+    "|md Vacfin\n```\nrevenue: 1\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012037z12038",
+    "|md Investae\n```\nrevenue: 5\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012027z12028",
+    "|md Feminance\n```\nrevenue: 14\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012041z12042",
+    "|md MoonFund\n```\nrevenue: 20\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012039z12040",
+    "|md FrostFinance\n```\nrevenue: 8\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012045z12046",
+    "|md Calqulate\n```\nrevenue: 12\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012043z12044",
+    "|md Finvac\n```\nrevenue: 4\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012029z12030",
+    "|md Prosperous Ledger\n```\nrevenue: 1\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012031z12032",
+    "|md Captal\n```\nrevenue: 4\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012035z12036",
+    "|md Networth\n```\nrevenue: 11\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012017z12018",
+    "|md Fiscaledge\n```\nclient_relationship: Markets\nsector: aerospace\nrevenue3: 70\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012033z12034",
+    "|md The Finance Nerds\n```\nrevenue: 7\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012021z12022",
+    "|md GuruFunds\n```\nrevenue3: 15\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012025z12026",
+    "|md MightyFunding\n```\nclient_relationship: commercial\nsector: investment\nrevenue3: 17\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012023z12024",
+    "|md CynwitCaptial\n```\nrevenue3: 22\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012019z12020",
+    "|md FluidFinances\n```\nrevenue3: 33\n\n``` |",
+    {
+      "shape": "rectangle",
+      "style.border-radius": 1
+    }
+  ],
+  [
+    "LEI00012023z12024",
+    "->",
+    "LEI00012033z12034"
+  ],
+  [
+    "LEI00012017z12018",
+    "->",
+    "LEI00012023z12024"
+  ],
+  [
+    "LEI00012019z12020",
+    "->",
+    "LEI00012039z12040"
+  ],
+  [
+    "LEI00012021z12022",
+    "->",
+    "LEI00012027z12028"
+  ],
+  [
+    "LEI00012021z12022",
+    "->",
+    "LEI00012029z12030"
+  ],
+  [
+    "LEI00012023z12024",
+    "->",
+    "LEI00012031z12032"
+  ],
+  [
+    "LEI00012025z12026",
+    "->",
+    "LEI00012045z12046"
+  ],
+  [
+    "LEI00012023z12024",
+    "->",
+    "LEI00012035z12036"
+  ],
+  [
+    "LEI00012025z12026",
+    "->",
+    "LEI00012047z12048"
+  ],
+  [
+    "LEI00012019z12020",
+    "->",
+    "LEI00012041z12042"
+  ],
+  [
+    "LEI00012021z12022",
+    "->",
+    "LEI00012025z12026"
+  ],
+  [
+    "LEI00012025z12026",
+    "->",
+    "LEI00012043z12044"
+  ],
+  [
+    "LEI00012017z12018",
+    "->",
+    "LEI00012021z12022"
+  ],
+  [
+    "LEI00012019z12020",
+    "->",
+    "LEI00012037z12038"
+  ],
+  [
+    "LEI00012017z12018",
+    "->",
+    "LEI00012019z12020"
+  ]
+]
