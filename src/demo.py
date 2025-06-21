@@ -675,7 +675,7 @@ def section_11():
 
 if __name__ == "__main__":
     # Uncomment the sections you want to run:
-    # section_1()
+    section_1()
     # section_2()
     # section_3()
     # section_4()
@@ -687,5 +687,5 @@ if __name__ == "__main__":
     # section_8()
     # section_9()
     # section_10()
-    section_11()
+    # section_11()
 
