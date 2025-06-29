@@ -202,6 +202,16 @@ Two command line tools are required:
 
 With a hierarchy.json in place, we first need to run dictim to read its contents and compile to a d2 file whenever it's rewritten.
 
+The dictim tool uses d2 internally, as long as you're on a fairly recent version of dictim. Once both tools are installed, the simplest way to visualize the graph is to open a command prompt and run:
+
+````bash
+dictim -w hierarchy.json
+````
+
+and leave it running.
+
+If you're not on a recent version of dictim, then you will need to run both dictim and d2 tools as follows...
+
 From a command prompt, run:
 
 ````bash
@@ -224,6 +234,9 @@ When you first run it, you should see something like this:
 
 
 We can leave these two commands running for the rest of the demo.
+
+
+###### Just using the 
 
 
 In brief, here's a summary of the different sections:
@@ -272,12 +285,18 @@ After running section 7, you should be seeing this.
 
 ![](img/sect11.svg)
 
+- section 12: Performance test - runs section 10's client offset aggregation logic 1000 times to benchmark the graph algorithm performance. Shows operations per second and average time per iteration.
+
 I hope you enjoyed the first part of this tutorial!
 
 ### What you've learned
 
 - that it's easy to construct your own graph library!
 - prewalk and postwalk are powerful tools for working with hierarchies and trees. As higher-order functions (functions that accept other functions as parameters), they separate the traversal logic from the transformation logic. This separation makes it possible to explore multiple approaches to the same problem by simply changing the transformation function while keeping the traversal mechanism unchanged.
+
+### golang port
+
+The golang port of this project is available [here](https://github.com/judepayne/simple-graph-go)
 
 ## PART 2: Adding and using graph traversal algorithms
 

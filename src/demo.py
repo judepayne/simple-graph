@@ -32,7 +32,7 @@ def section_1():
     # Visualize the original graph
     print(f"\nGenerating visualization...")
     viz(g)
-    print("Check hierarchy.dict file to see the visualization data")
+    print("Check hierarchy.json file to see the visualization data")
     
     return g
 
@@ -66,7 +66,7 @@ def section_2():
     # Visualize the graph with colored root
     print(f"\nGenerating visualization with colored root...")
     viz(g_with_root_color)
-    print("Check hierarchy.dict file - only the root should be colored")
+    print("Check hierarchy.json file - only the root should be colored")
     
     return g_with_root_color
 
@@ -125,7 +125,7 @@ def section_3():
     # Visualize the fully colored tree
     print(f"\nGenerating fully colored tree visualization...")
     viz(g_colored)
-    print("Check hierarchy.dict file - all nodes should now be colored pink")
+    print("Check hierarchy.json file - all nodes should now be colored pink")
     
     return g_colored
 
@@ -195,7 +195,7 @@ def section_4():
     # Visualize the mixed-color tree
     print(f"\nGenerating mixed-color tree visualization...")
     viz(g_colored)
-    print("Check hierarchy.dict file - should show pink and green nodes!")
+    print("Check hierarchy.json file - should show pink and green nodes!")
     
     return g_colored
 
@@ -240,7 +240,7 @@ def section_5():
     # Visualize with data path (will show the data in tooltips)
     print(f"\nGenerating visualization with data path...")
     viz(g_with_data, "data")
-    print("Check hierarchy.dict file - data should now be visible in tooltips for both nodes!")
+    print("Check hierarchy.json file - data should now be visible in tooltips for both nodes!")
     
     return g_with_data
 
@@ -301,7 +301,7 @@ def section_6():
     # Visualize the result
     print(f"\nGenerating visualization with inherited sector data...")
     viz(g_sector_walked, "data")
-    print("Check hierarchy.dict file - aerospace sector should be inherited except where client_relationship exists!")
+    print("Check hierarchy.json file - aerospace sector should be inherited except where client_relationship exists!")
     
     return g_sector_walked
 
@@ -668,6 +668,100 @@ def section_11():
     
     return g_aggregated
 
+def section_12():
+    """Performance test - Running section 10 logic 1000 times."""
+    
+    print("\n" + "="*60)
+    print("SECTION 12: Performance test - Running section 10 logic 1000 times")
+    print("="*60)
+
+    # Get the base graph setup once
+    g_with_revenue = setup_graph_for_aggregation()
+    
+    # Create the aggregation function (same as section 10)
+    def aggregate_with_client_offsets(current_attrs, children_attrs_list):
+        """Sum revenue normally, but add revenue2_offset when current node has CR children."""
+        new_attrs = current_attrs.copy()
+        current_data = new_attrs.get('data', {}).copy()
+        
+        # Sum up revenue2 and revenue2_offset from all children
+        # Check for both 'revenue2' (from aggregated nodes) and 'revenue' (from leaf nodes)
+        children_revenue = sum(child_attrs.get('data', {}).get('revenue2', 0) or 
+                              child_attrs.get('data', {}).get('revenue', 0)
+                              for child_attrs in children_attrs_list)
+        children_offset = sum(child_attrs.get('data', {}).get('revenue2_offset', 0) 
+                             for child_attrs in children_attrs_list)
+        
+        # Only calculate revenue2 if we have children (i.e., we're above leaf nodes)
+        if children_revenue > 0:
+            # Get our own revenue if any (for nodes that have both children AND own revenue)
+            own_revenue = current_data.get('revenue', 0)
+            total_revenue = own_revenue + children_revenue
+            current_data['revenue2'] = total_revenue
+        
+        # Check if any children have client_relationship - if so, create offset for THIS node
+        cr_children_revenue = 0
+        for child_attrs in children_attrs_list:
+            child_data = child_attrs.get('data', {})
+            if child_data.get('client_relationship'):
+                # Get revenue from either revenue2 (aggregated) or revenue (leaf)
+                cr_child_revenue = child_data.get('revenue2', 0) or child_data.get('revenue', 0)
+                cr_children_revenue += cr_child_revenue
+        
+        if cr_children_revenue > 0:
+            current_data['revenue2_offset'] = -cr_children_revenue
+        
+        # Add any existing revenue2_offset from children (propagate offsets up)
+        if children_offset != 0:
+            existing_offset = current_data.get('revenue2_offset', 0)
+            current_data['revenue2_offset'] = existing_offset + children_offset
+        
+        # Update node data
+        new_attrs['data'] = current_data
+        return new_attrs
+
+    import time
+    
+    iterations = 1000
+    print(f"Running postwalk aggregation {iterations} times...")
+    
+    start_time = time.time()
+    
+    final_result = None
+    for i in range(iterations):
+        result = g_with_revenue.postwalk_attrs(aggregate_with_client_offsets)
+        final_result = result
+        
+        # Progress indicator every 100 iterations
+        if (i + 1) % 100 == 0:
+            print(f"  Completed {i + 1} iterations")
+    
+    duration = time.time() - start_time
+    
+    # Performance results
+    print(f"\nPerformance Results:")
+    print(f"  Total iterations: {iterations}")
+    print(f"  Total time: {duration:.6f} seconds")
+    print(f"  Average per iteration: {(duration * 1000000 / iterations):.2f} microseconds")
+    print(f"  Operations per second: {iterations / duration:.2f}")
+
+    # Show final result verification
+    if final_result:
+        root_node = final_result.roots()[0]
+        root_data = final_result.attrs(root_node).get('data', {})
+        root_revenue = root_data.get('revenue2', 0)
+        root_offset = root_data.get('revenue2_offset', 0)
+        net_revenue = root_revenue + root_offset
+        
+        print(f"\nFinal verification (last iteration):")
+        print(f"  Total revenue2: ${root_revenue}M")
+        print(f"  Client offsets: ${root_offset}M")
+        print(f"  Net revenue: ${net_revenue}M")
+
+    print(f"\nPerformance test completed!")
+    
+    return final_result
+
 
 # ==============================================================================
 # Run sections by uncommenting the calls below
@@ -688,4 +782,5 @@ if __name__ == "__main__":
     # section_9()
     # section_10()
     # section_11()
+    # section_12()
 
