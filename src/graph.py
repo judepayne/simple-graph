@@ -1,7 +1,7 @@
 """graph data structures"""
 
 import uuid
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 
 # READING SECTION
 # This is how the user will specify a graph. With a simple dict of nodes and edges.
@@ -759,3 +759,299 @@ class Graph:
             return step_fn(current_attrs, children_attrs)
         
         return self.postwalk_tree(start_node, wrapper_func)
+    
+    # === DEPTH-FIRST GRAPH TRAVERSAL ===
+    
+    def df_traverse_attrs_from_start(self, direction: str, start_node: str, f, consumes_edge_attrs: bool = False) -> 'Graph':
+        """
+        Depth-first traversal of graph from start node, applying function f to update node attributes.
+        
+        This is the general graph equivalent of prewalk_tree that works on any graph structure,
+        not just trees, and can traverse in either direction.
+        
+        Args:
+            direction: Either "up" (follow in_edges/parents) or "down" (follow out_edges/children)
+            start_node: Node ID (string) to start traversal from
+            f: Function to apply. Takes (first_node_attrs, second_node_attrs) or 
+               (first_node_attrs, second_node_attrs, edge_attrs_list) if consumes_edge_attrs=True
+               Returns new attributes dict for the second node
+            consumes_edge_attrs: If True, f receives edge attributes as third parameter
+        
+        Returns:
+            New Graph with updated attributes
+        
+        Raises:
+            ValueError: If direction is not "up" or "down", or start_node doesn't exist
+        """
+        if direction not in {"up", "down"}:
+            raise ValueError("Direction must be 'up' or 'down'")
+        
+        if start_node not in self._nodemap:
+            raise ValueError(f"Start node {start_node} does not exist")
+        
+        # Create a copy of the current graph
+        new_graph = Graph()
+        new_graph._node_key = self._node_key
+        new_graph._nodemap = {}
+        new_graph._attrs = {}
+        
+        # Copy all nodes and edges to new graph
+        for node_id in self.nodes():
+            new_graph._nodemap[node_id] = {
+                "out_edges": {},
+                "in_edges": {}
+            }
+            new_graph._attrs[node_id] = self._attrs[node_id].copy()
+        
+        for edge in self.edges():
+            edge_id = edge['id']
+            new_graph._attrs[edge_id] = edge.copy()
+            
+            src, dest = edge['src'], edge['dest']
+            edge_ref = {"src": src, "dest": dest, "id": edge_id}
+            
+            if dest not in new_graph._nodemap[src]["out_edges"]:
+                new_graph._nodemap[src]["out_edges"][dest] = []
+            new_graph._nodemap[src]["out_edges"][dest].append(edge_ref)
+            
+            if src not in new_graph._nodemap[dest]["in_edges"]:
+                new_graph._nodemap[dest]["in_edges"][src] = []
+            new_graph._nodemap[dest]["in_edges"][src].append(edge_ref)
+        
+        # Generate traversal edges using depth-first pre-order
+        traversal_edges = self._df_pre_edge_traverse(start_node, direction)
+        
+        # Apply function to each edge in traversal order
+        for first_node, second_node in traversal_edges:
+            first_attrs = new_graph.attrs(first_node)
+            second_attrs = new_graph.attrs(second_node)
+            
+            if consumes_edge_attrs:
+                # Get all edges between first and second node
+                edge_attrs = []
+                if direction == "down":
+                    # first -> second
+                    edges_between = new_graph._nodemap[first_node]["out_edges"].get(second_node, [])
+                else:
+                    # second -> first (we're going up, so first is actually the parent)
+                    edges_between = new_graph._nodemap[second_node]["out_edges"].get(first_node, [])
+                
+                for edge_ref in edges_between:
+                    edge_attrs.append(new_graph.attrs(edge_ref["id"]))
+                
+                new_attrs = f(first_attrs, second_attrs, edge_attrs)
+            else:
+                new_attrs = f(first_attrs, second_attrs)
+            
+            # Update second node's attributes
+            if new_attrs is not None:
+                new_graph.set_node_attrs(second_node, new_attrs)
+        
+        return new_graph
+    
+    def _df_pre_edge_traverse(self, start_node: str, direction: str) -> List[Tuple[str, str]]:
+        """
+        Generate edges for depth-first pre-order traversal.
+        
+        Args:
+            start_node: Node to start traversal from
+            direction: "up" (follow parents) or "down" (follow children)
+        
+        Returns:
+            List of (first_node, second_node) tuples representing traversal edges
+        """
+        visited = set()
+        edges = []
+        
+        def dfs(current_node):
+            if current_node in visited:
+                return
+            
+            visited.add(current_node)
+            
+            # Get next nodes based on direction
+            if direction == "down":
+                next_nodes = self.children(current_node)
+            else:  # direction == "up"
+                next_nodes = self.parents(current_node)
+            
+            for next_node in next_nodes:
+                if next_node not in visited:
+                    edges.append((current_node, next_node))
+                    dfs(next_node)
+        
+        dfs(start_node)
+        return edges
+    
+    def df_traverse_attrs_from_starts(self, direction: str, start_nodes: List[str], f, consumes_edge_attrs: bool = False) -> 'Graph':
+        """
+        Depth-first traversal from multiple starting nodes, applying function f to update node attributes.
+        
+        This function applies df_traverse_attrs_from_start sequentially from each starting node,
+        with each traversal operating on the result of the previous one.
+        
+        Args:
+            direction: Either "up" (follow in_edges/parents) or "down" (follow out_edges/children)
+            start_nodes: List of node IDs (strings) to start traversal from
+            f: Function to apply. Takes (first_node_attrs, second_node_attrs) or 
+               (first_node_attrs, second_node_attrs, edge_attrs_list) if consumes_edge_attrs=True
+               Returns new attributes dict for the second node
+            consumes_edge_attrs: If True, f receives edge attributes as third parameter
+        
+        Returns:
+            New Graph with updated attributes from all traversals
+        
+        Raises:
+            ValueError: If direction is not "up" or "down", or any start_node doesn't exist
+        """
+        if direction not in {"up", "down"}:
+            raise ValueError("Direction must be 'up' or 'down'")
+        
+        # Validate all start nodes exist
+        for start_node in start_nodes:
+            if start_node not in self._nodemap:
+                raise ValueError(f"Start node {start_node} does not exist")
+        
+        # Apply traversal from each start node sequentially
+        current_graph = self
+        for start_node in start_nodes:
+            current_graph = current_graph.df_traverse_attrs_from_start(
+                direction, start_node, f, consumes_edge_attrs
+            )
+        
+        return current_graph
+    
+    def _df_trace_from_start_impl(self, direction: str, start_node: str, edge_filter_fn, collection_fn, consumes_edge_attrs: bool, initial_data) -> 'Graph':
+        """
+        Implementation function that traces paths through graph, building up 'collected' data.
+        
+        Args:
+            direction: Either "up" or "down"
+            start_node: Node ID to start from
+            edge_filter_fn: Function (accumulated_data, edge_list) → filtered_edge_list
+            collection_fn: Function (accumulated_data, node_attrs[, edge_attrs]) → new_accumulated_data
+            consumes_edge_attrs: If True, collection_fn receives incoming edge attributes
+            initial_data: Initial accumulated data value
+        
+        Returns:
+            Graph with 'collected' data stored in _attrs['collected']
+        """
+        if direction not in {"up", "down"}:
+            raise ValueError("Direction must be 'up' or 'down'")
+        
+        if start_node not in self._nodemap:
+            raise ValueError(f"Start node {start_node} does not exist")
+        
+        # Create a copy of the current graph
+        new_graph = Graph()
+        new_graph._node_key = self._node_key
+        new_graph._nodemap = {}
+        new_graph._attrs = {}
+        
+        # Copy all nodes and edges to new graph
+        for node_id in self.nodes():
+            new_graph._nodemap[node_id] = {
+                "out_edges": {},
+                "in_edges": {}
+            }
+            new_graph._attrs[node_id] = self._attrs[node_id].copy()
+        
+        for edge in self.edges():
+            edge_id = edge['id']
+            new_graph._attrs[edge_id] = edge.copy()
+            
+            src, dest = edge['src'], edge['dest']
+            edge_ref = {"src": src, "dest": dest, "id": edge_id}
+            
+            if dest not in new_graph._nodemap[src]["out_edges"]:
+                new_graph._nodemap[src]["out_edges"][dest] = []
+            new_graph._nodemap[src]["out_edges"][dest].append(edge_ref)
+            
+            if src not in new_graph._nodemap[dest]["in_edges"]:
+                new_graph._nodemap[dest]["in_edges"][src] = []
+            new_graph._nodemap[dest]["in_edges"][src].append(edge_ref)
+        
+        # Initialize collected data
+        new_graph._attrs['collected'] = initial_data
+        
+        def get_edges_from_node(node_id):
+            """Get all edges from a node based on direction."""
+            edges = []
+            if direction == "down":
+                # Get out_edges
+                for dest_node, edge_refs in new_graph._nodemap[node_id]["out_edges"].items():
+                    for edge_ref in edge_refs:
+                        edges.append(new_graph.attrs(edge_ref["id"]))
+            else:  # direction == "up"
+                # Get in_edges  
+                for src_node, edge_refs in new_graph._nodemap[node_id]["in_edges"].items():
+                    for edge_ref in edge_refs:
+                        edges.append(new_graph.attrs(edge_ref["id"]))
+            return edges
+        
+        def trace(current_node, accumulated_data, visited, incoming_edge=None):
+            """Recursive trace function."""
+            if current_node in visited:
+                return  # Cycle detected, stop this path
+            
+            new_visited = visited | {current_node}
+            
+            # Update accumulated data with current node
+            node_attrs = new_graph.attrs(current_node)
+            
+            if consumes_edge_attrs and incoming_edge:
+                edge_attrs = new_graph.attrs(incoming_edge["id"])
+                new_accumulated = collection_fn(accumulated_data, node_attrs, edge_attrs)
+            else:
+                new_accumulated = collection_fn(accumulated_data, node_attrs)
+            
+            # Store in graph
+            new_graph._attrs['collected'] = new_accumulated
+            
+            # Get edges to follow from current node
+            edges = get_edges_from_node(current_node)
+            filtered_edges = edge_filter_fn(new_accumulated, edges)
+            
+            # Recursively trace each filtered edge
+            for edge in filtered_edges:
+                if direction == "down":
+                    next_node = edge['dest']
+                else:  # direction == "up"
+                    next_node = edge['src']
+                
+                edge_ref = {"src": edge['src'], "dest": edge['dest'], "id": edge['id']}
+                trace(next_node, new_accumulated, new_visited, edge_ref)
+        
+        # Start tracing from start_node
+        trace(start_node, initial_data, set())
+        
+        return new_graph
+    
+    def df_trace_from_start(self, direction: str, start_node: str, edge_filter_fn, collection_fn, consumes_edge_attrs: bool = False, initial_data=None):
+        """
+        Trace paths through the graph using depth-first search, collecting data along the way.
+        
+        This function follows paths based on edge filtering and accumulates data using a collection function.
+        Unlike traversal functions that visit all reachable nodes, this traces specific paths that satisfy
+        the filtering criteria.
+        
+        Args:
+            direction: Either "up" (follow in_edges/parents) or "down" (follow out_edges/children)
+            start_node: Node ID (string) to start trace from
+            edge_filter_fn: Function that takes (accumulated_data, edge_list) and returns filtered edge_list
+                           Controls which edges to follow at each step
+            collection_fn: Function that takes (accumulated_data, node_attrs) or 
+                          (accumulated_data, node_attrs, edge_attrs) if consumes_edge_attrs=True
+                          Returns new accumulated_data
+            consumes_edge_attrs: If True, collection_fn receives incoming edge attributes as third parameter
+            initial_data: Initial value for accumulated data (default: None)
+        
+        Returns:
+            Final accumulated data after tracing all valid paths
+        
+        Raises:
+            ValueError: If direction is not "up" or "down", or start_node doesn't exist
+        """
+        result_graph = self._df_trace_from_start_impl(direction, start_node, edge_filter_fn, 
+                                                     collection_fn, consumes_edge_attrs, initial_data)
+        return result_graph._attrs.get('collected')
