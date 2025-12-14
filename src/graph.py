@@ -926,7 +926,7 @@ class Graph:
         Implementation function that traces paths through graph, building up 'collected' data.
         
         Args:
-            direction: Either "up" or "down"
+            direction: Either "backwards" or "forwards"
             start_node: Node ID to start from
             edge_filter_fn: Function (accumulated_data, edge_list) → filtered_edge_list
             collection_fn: Function (accumulated_data, node_attrs[, edge_attrs]) → new_accumulated_data
@@ -936,8 +936,8 @@ class Graph:
         Returns:
             Graph with 'collected' data stored in _attrs['collected']
         """
-        if direction not in {"up", "down"}:
-            raise ValueError("Direction must be 'up' or 'down'")
+        if direction not in {"backwards", "forwards"}:
+            raise ValueError("Direction must be 'backwards' or 'forwards'")
         
         if start_node not in self._nodemap:
             raise ValueError(f"Start node {start_node} does not exist")
@@ -977,12 +977,12 @@ class Graph:
         def get_edges_from_node(node_id):
             """Get all edges from a node based on direction."""
             edges = []
-            if direction == "down":
+            if direction == "forwards":
                 # Get out_edges
                 for dest_node, edge_refs in new_graph._nodemap[node_id]["out_edges"].items():
                     for edge_ref in edge_refs:
                         edges.append(new_graph.attrs(edge_ref["id"]))
-            else:  # direction == "up"
+            else:  # direction == "backwards"
                 # Get in_edges  
                 for src_node, edge_refs in new_graph._nodemap[node_id]["in_edges"].items():
                     for edge_ref in edge_refs:
@@ -1014,9 +1014,9 @@ class Graph:
             
             # Recursively trace each filtered edge
             for edge in filtered_edges:
-                if direction == "down":
+                if direction == "forwards":
                     next_node = edge['dest']
-                else:  # direction == "up"
+                else:  # direction == "backwards"
                     next_node = edge['src']
                 
                 edge_ref = {"src": edge['src'], "dest": edge['dest'], "id": edge['id']}
@@ -1036,7 +1036,7 @@ class Graph:
         the filtering criteria.
         
         Args:
-            direction: Either "up" (follow in_edges/parents) or "down" (follow out_edges/children)
+            direction: Either "backwards" (follow in_edges/parents) or "forwards" (follow out_edges/children)
             start_node: Node ID (string) to start trace from
             edge_filter_fn: Function that takes (accumulated_data, edge_list) and returns filtered edge_list
                            Controls which edges to follow at each step
@@ -1050,7 +1050,7 @@ class Graph:
             Final accumulated data after tracing all valid paths
         
         Raises:
-            ValueError: If direction is not "up" or "down", or start_node doesn't exist
+            ValueError: If direction is not "backwards" or "forwards", or start_node doesn't exist
         """
         result_graph = self._df_trace_from_start_impl(direction, start_node, edge_filter_fn, 
                                                      collection_fn, consumes_edge_attrs, initial_data)

@@ -148,7 +148,7 @@ def test_df_trace_from_start():
         return path_data
     
     print(f"\nTracing from 'A' following only heavy edges:")
-    final_data = g.df_trace_from_start("down", "A", follow_heavy_edges, collect_path_and_weight, 
+    final_data = g.df_trace_from_start("forwards", "A", follow_heavy_edges, collect_path_and_weight, 
                                       consumes_edge_attrs=True, initial_data=None)
     
     print(f"\nFinal trace results:")
@@ -169,7 +169,7 @@ def test_df_trace_from_start():
         print(f"  Filtering edges. Available: {len(edges)}, Normal: {len(normal_edges)} {edge_desc}")
         return normal_edges
     
-    final_data_normal = g.df_trace_from_start("down", "A", follow_normal_edges, collect_path_and_weight,
+    final_data_normal = g.df_trace_from_start("forwards", "A", follow_normal_edges, collect_path_and_weight,
                                              consumes_edge_attrs=True, initial_data=None)
     
     print(f"\nFinal trace results (normal edges):")
